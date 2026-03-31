@@ -1,11 +1,11 @@
 #!/bin/bash
 # ===============================================
-# 终极无人值守 Reality + vnStat + Apache + 防火墙 安装脚本
-# 全自动生成 config.json，无循环安装
+# 终极 Reality 一键安装脚本
+# 支持 VLESS+Reality + vnStat + Apache + 防火墙
+# 完全无人值守，自动生成密钥和节点
 # ===============================================
 
 set -e
-
 echo "===== 开始安装 ====="
 
 # -------------------------------
@@ -19,10 +19,7 @@ echo "[INFO] VPS IP: $IP"
 # -------------------------------
 apt update -y
 apt upgrade -y
-apt install -y curl unzip gnupg2 ca-certificates lsb-release apache2 php php-cli vnstat python3-pip
-
-# 安装 Python requests 用于 Telegram
-pip3 install requests || true
+apt install -y curl unzip gnupg2 ca-certificates lsb-release apache2 php php-cli vnstat openssl socat
 
 # -------------------------------
 # 防火墙配置
@@ -57,24 +54,32 @@ systemctl restart apache2
 echo "[INFO] vnStat 面板已配置: http://$IP/vnstat/"
 
 # -------------------------------
-# 安装 Xray 并生成 Reality config.json
-# -------------------------------
-echo "[INFO] 安装 Xray 并生成 Reality config.json"
-
 # 安装 Xray
+# -------------------------------
+echo "[INFO] 安装 Xray"
 bash <(curl -Ls https://raw.githubusercontent.com/XTLS/Xray-install/main/install-release.sh) install
 
-# 自动生成 UUID
+# -------------------------------
+# 生成 Reality x25519 密钥
+# -------------------------------
+echo "[INFO] 生成 Reality x25519 密钥"
+REALITY_PRIVATE_KEY=$(xray x25519 | awk '/Private/{print $3}')
+REALITY_PUBLIC_KEY=$(xray x25519 | awk '/Public/{print $3}')
+
+# -------------------------------
+# 生成 UUID + 3 shortId
+# -------------------------------
 REALITY_UUID=$(cat /proc/sys/kernel/random/uuid)
-# 自动生成 3 个 shortId
 SHORT_IDS=()
 for i in {1..3}; do
   SHORT_IDS+=($(head /dev/urandom | tr -dc a-f0-9 | head -c8))
 done
-REALITY_PUBLIC_KEY=$(openssl ecparam -name prime256v1 -genkey -noout -out /tmp/private.key && openssl ec -in /tmp/private.key -pubout -outform DER | tail -c 65 | xxd -p -c 65)
+
 REALITY_SNI="www.cloudflare.com"
 
-# 写 config.json
+# -------------------------------
+# 写入 Xray config.json
+# -------------------------------
 XRAY_CONF="/usr/local/etc/xray/config.json"
 cat > $XRAY_CONF <<EOF
 {
@@ -92,9 +97,10 @@ cat > $XRAY_CONF <<EOF
       "network": "tcp",
       "security": "reality",
       "realitySettings": {
-        "publicKey": "$REALITY_PUBLIC_KEY",
-        "shortIds": ["${SHORT_IDS[0]}","${SHORT_IDS[1]}","${SHORT_IDS[2]}"],
         "dest": "$IP:443",
+        "publicKey": "$REALITY_PUBLIC_KEY",
+        "privateKey": "$REALITY_PRIVATE_KEY",
+        "shortIds": ["${SHORT_IDS[0]}","${SHORT_IDS[1]}","${SHORT_IDS[2]}"],
         "serverNames": ["$REALITY_SNI"]
       }
     }
@@ -108,15 +114,15 @@ systemctl restart xray
 echo "[INFO] Xray Reality 安装完成"
 
 # -------------------------------
-# 输出 v2rayN 节点
+# 输出 v2rayN / v2rayNG 节点
 # -------------------------------
 echo ""
 echo "=============================="
 echo "🎉 安装完成！"
 echo "vnStat 面板: http://$IP/vnstat/"
+echo ""
 echo "Reality VLESS 节点链接:"
 for i in {0..2}; do
-  echo "vless://$REALITY_UUID@$IP:443?security=reality&flow=xtls-rprx-vision&type=tcp&reality-short-id=${SHORT_IDS[i]}&sni=$REALITY_SNI#$IP-$((i+1))"
+  echo "vless://$REALITY_UUID@$IP:443?security=reality&flow=xtls-rprx-vision&type=tcp&reality-public-key=$REALITY_PUBLIC_KEY&reality-short-id=${SHORT_IDS[i]}&sni=$REALITY_SNI#$IP-$((i+1))"
 done
 echo "=============================="
-echo ""
