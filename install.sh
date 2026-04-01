@@ -130,11 +130,26 @@ canvas{margin-top:10px;}
 $json = shell_exec("vnstat --json");
 $data = json_decode($json,true);
 
+// 自动找到正确网卡（非 lo / docker）
+$ifaceData = null;
+foreach ($data['interfaces'] as $iface) {
+    if ($iface['name'] != 'lo') {
+        $ifaceData = $iface;
+        break;
+    }
+}
+
+if (!$ifaceData) {
+    echo "No valid interface found";
+    exit;
+}
+
+
 // 今日上传/下载
 $today_rx = $today_tx = 0;
-if(isset($data['interfaces'][0]['traffic']['days'][0])){
-    $today_rx = round($data['interfaces'][0]['traffic']['days'][0]['rx']/1024/1024,2);
-    $today_tx = round($data['interfaces'][0]['traffic']['days'][0]['tx']/1024/1024,2);
+if(isset($ifaceData['traffic']['days'][0])){
+    $today_rx = round($ifaceData['traffic']['days'][0]['rx']/1024/1024,2);
+    $today_tx = round($ifaceData['traffic']['days'][0]['tx']/1024/1024,2);
 }
 echo "<div class='card'><div>📥 今日下载</div><div class='big'>{$today_rx} MB</div></div>";
 echo "<div class='card'><div>📤 今日上传</div><div class='big'>{$today_tx} MB</div></div>";
@@ -144,7 +159,7 @@ echo "<div class='card'><div>📤 今日上传</div><div class='big'>{$today_tx}
 <br>
 <div class="card"><h2>🌍 User Traffic (UUID)</h2>
 <table class="table">
-<tr><td><?php echo $data['interfaces'][0]['name']??'N/A'; ?></td><td>示例流量</td></tr>
+<tr><td><?php echo $ifaceData['name']??'N/A'; ?></td><td>示例流量</td></tr>
 </table></div>
 
 <br>
@@ -160,8 +175,8 @@ const dailyChart = new Chart(document.getElementById('dailyChart'), {
         labels: <?php
         $daily_labels=[];
         $daily_values=[];
-        if(isset($data['interfaces'][0]['traffic']['days'])){
-            foreach($data['interfaces'][0]['traffic']['days'] as $day){
+        if(isset($ifaceData['traffic']['days'])){
+            foreach($ifaceData['traffic']['days'] as $day){
                 $daily_labels[] = $day['date']['day'].'/'.$day['date']['month'];
                 $daily_values[] = round(($day['rx']+$day['tx'])/1024/1024,2);
             }
@@ -179,8 +194,8 @@ const monthChart = new Chart(document.getElementById('monthChart'), {
         labels: <?php
         $month_labels=[];
         $month_values=[];
-        if(isset($data['interfaces'][0]['traffic']['months'])){
-            foreach($data['interfaces'][0]['traffic']['months'] as $month){
+        if(isset($ifaceData['traffic']['months'])){
+            foreach($ifaceData['traffic']['months'] as $month){
                 $month_labels[] = $month['date']['month'];
                 $month_values[] = round(($month['rx']+$month['tx'])/1024/1024/1024,2);
             }
