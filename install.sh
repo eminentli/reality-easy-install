@@ -72,8 +72,10 @@ systemctl restart xray
 
 echo "初始化 vnStat..."
 IFACE=$(ip route | grep default | awk '{print $5}')
-vnstat -u -i $IFACE
+vnstat --create -i $IFACE || true
+systemctl enable vnstat
 systemctl restart vnstat
+
 
 echo "安装 Apache2 + PHP..."
 systemctl enable apache2
