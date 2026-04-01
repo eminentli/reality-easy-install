@@ -1,127 +1,88 @@
 #!/bin/bash
+# reality-easy-install.sh
+# 终极全自动 Xray Reality + vnStat 面板安装脚本
+
 set -e
 
-echo "===== Reality 一键稳定安装开始 ====="
+IP=$(curl -s https://ipinfo.io/ip)
+UUID=$(cat /proc/sys/kernel/random/uuid)
 
-# -------------------------------
-# 获取 IP
-# -------------------------------
-IP=$(curl -s https://ipinfo.io/ip || hostname -I | awk '{print $1}')
-echo "[INFO] IP: $IP"
-
-# -------------------------------
-# 安装基础
-# -------------------------------
+# 安装基础依赖
 apt update -y
-apt install -y curl unzip apache2 php php-cli vnstat ufw
+apt install -y curl wget unzip php-cli php-gd apache2 qrencode vnstat
 
-# -------------------------------
-# 防火墙
-# -------------------------------
+# 配置防火墙
 ufw allow 22/tcp
 ufw allow 80/tcp
 ufw allow 443/tcp
 ufw --force enable
 ufw reload
 
-# -------------------------------
-# 检查 443 端口
-# -------------------------------
-if ss -tlnp | grep -q ":443"; then
-    echo "[ERROR] 443端口被占用，请先释放（如关闭nginx/apache ssl）"
-    exit 1
-fi
-
-# -------------------------------
-# vnStat + 面板
-# -------------------------------
-systemctl enable vnstat
-systemctl start vnstat
-
-mkdir -p /var/www/html/vnstat
-cat > /var/www/html/vnstat/index.php <<'EOF'
-<?php
-$iface = trim(shell_exec("ip route | grep default | awk '{print $5}'"));
-echo "<h2>Traffic ($iface)</h2><pre>";
-system("vnstat -i $iface");
-echo "</pre>";
-?>
-EOF
-
-chown -R www-data:www-data /var/www/html/vnstat
-systemctl restart apache2
-systemctl enable apache2
-
-# -------------------------------
-# 安装 Xray
-# -------------------------------
+# 安装 Xray 最新版本
 bash <(curl -Ls https://raw.githubusercontent.com/XTLS/Xray-install/main/install-release.sh) install
 
-# -------------------------------
-# 生成 Reality 密钥
-# -------------------------------
-KEYPAIR=$(xray x25519)
-PRIVATE_KEY=$(echo "$KEYPAIR" | grep Private | awk '{print $3}')
-PUBLIC_KEY=$(echo "$KEYPAIR" | grep Public | awk '{print $3}')
+# 生成 Reality keypair
+KEYPAIR=$(/usr/local/bin/xray x25519)
+PRIVATE_KEY=$(echo "$KEYPAIR" | grep "PrivateKey" | awk '{print $2}')
+PUBLIC_KEY=$(echo "$KEYPAIR" | grep "Password" | awk '{print $2}')
 
-# -------------------------------
-# UUID + shortId
-# -------------------------------
-UUID=$(cat /proc/sys/kernel/random/uuid)
-SHORT_ID=$(head /dev/urandom | tr -dc a-f0-9 | head -c8)
+# 生成短 ID 列表
+SHORTIDS=()
+for i in {1..3}; do
+  SHORTIDS+=($(head -c 4 /dev/urandom | xxd -p))
+done
 
-# -------------------------------
-# 写配置（关键修复点）
-# -------------------------------
+# 生成 config.json
 cat > /usr/local/etc/xray/config.json <<EOF
 {
-  "log": {
-    "loglevel": "warning"
-  },
-  "inbounds": [{
-    "port": 443,
-    "protocol": "vless",
-    "settings": {
-      "clients": [{
-        "id": "$UUID",
-        "flow": "xtls-rprx-vision"
-      }],
-      "decryption": "none"
-    },
-    "streamSettings": {
-      "network": "tcp",
-      "security": "reality",
-      "realitySettings": {
-        "dest": "www.cloudflare.com:443",
-        "serverNames": ["www.cloudflare.com"],
-        "privateKey": "$PRIVATE_KEY",
-        "shortIds": ["$SHORT_ID"]
+  "log": { "loglevel": "warning" },
+  "inbounds": [
+    {
+      "port": 443,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          { "id": "$UUID", "flow": "xtls-rprx-vision" }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "reality",
+        "realitySettings": {
+          "dest": "www.cloudflare.com:443",
+          "serverNames": ["www.cloudflare.com"],
+          "privateKey": "$PRIVATE_KEY",
+          "shortIds": ["${SHORTIDS[0]}","${SHORTIDS[1]}","${SHORTIDS[2]}"]
+        }
       }
     }
-  }],
-  "outbounds": [
-    {
-      "protocol": "freedom"
-    }
-  ]
+  ],
+  "outbounds": [{ "protocol": "freedom" }]
 }
 EOF
 
-# -------------------------------
-# 启动 Xray
-# -------------------------------
+# 启用并启动 Xray
 systemctl enable xray
 systemctl restart xray
 
-# -------------------------------
-# 输出节点
-# -------------------------------
-echo ""
-echo "========= 🎉 安装完成 ========="
-echo "vnStat 面板: http://$IP/vnstat/"
-echo ""
-echo "👇 v2rayNG / v2rayN 节点："
-echo ""
-echo "vless://$UUID@$IP:443?security=reality&flow=xtls-rprx-vision&type=tcp&reality-public-key=$PUBLIC_KEY&reality-short-id=$SHORT_ID&sni=www.cloudflare.com#$IP"
-echo ""
-echo "=============================="
+# 安装 vnStat 面板
+wget -O /var/www/html/vnstat.zip https://github.com/vergoh/vnstat-php/archive/refs/heads/main.zip
+unzip /var/www/html/vnstat.zip -d /var/www/html/
+mv /var/www/html/vnstat-php-main /var/www/html/vnstat
+chown -R www-data:www-data /var/www/html/vnstat
+
+# 启动 Apache2
+systemctl enable apache2
+systemctl restart apache2
+
+# 输出 v2rayNG 链接并生成二维码
+echo "v2rayNG 链接列表："
+for sid in "${SHORTIDS[@]}"; do
+  LINK="vless://$UUID@$IP:443?security=reality&encryption=none&pbk=$PUBLIC_KEY&type=tcp&flow=xtls-rprx-vision&sni=www.cloudflare.com&sid=$sid#$IP"
+  echo "$LINK"
+  qrencode -o /var/www/html/v2rayng_$sid.png "$LINK"
+done
+
+echo "vnStat 面板地址：http://$IP/vnstat/"
+echo "二维码 PNG 已生成在 /var/www/html/"
