@@ -67,7 +67,7 @@ systemctl enable xray
 systemctl restart xray
 
 # 安装 vnStat 面板
-wget -O /var/www/html/vnstat.zip https://github.com/vergoh/vnstat-php/archive/refs/heads/main.zip
+wget -O /var/www/html/vnstat.zip https://github.com/vergoh/vnstat-php/archive/refs/heads/master.zip
 unzip /var/www/html/vnstat.zip -d /var/www/html/
 mv /var/www/html/vnstat-php-main /var/www/html/vnstat
 chown -R www-data:www-data /var/www/html/vnstat
