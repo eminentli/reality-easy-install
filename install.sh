@@ -147,9 +147,9 @@ if (!$ifaceData) {
 
 // 今日上传/下载
 $today_rx = $today_tx = 0;
-if(isset($ifaceData['traffic']['days'][0])){
-    $today_rx = round($ifaceData['traffic']['days'][0]['rx']/1024/1024,2);
-    $today_tx = round($ifaceData['traffic']['days'][0]['tx']/1024/1024,2);
+if(isset($ifaceData['traffic']['day'][0])){
+    $today_rx = round($ifaceData['traffic']['day'][0]['rx']/1024/1024,2);
+    $today_tx = round($ifaceData['traffic']['day'][0]['tx']/1024/1024,2);
 }
 echo "<div class='card'><div>📥 今日下载</div><div class='big'>{$today_rx} MB</div></div>";
 echo "<div class='card'><div>📤 今日上传</div><div class='big'>{$today_tx} MB</div></div>";
@@ -175,8 +175,8 @@ const dailyChart = new Chart(document.getElementById('dailyChart'), {
         labels: <?php
         $daily_labels=[];
         $daily_values=[];
-        if(isset($ifaceData['traffic']['days'])){
-            foreach($ifaceData['traffic']['days'] as $day){
+        if(isset($ifaceData['traffic']['day'])){
+            foreach($ifaceData['traffic']['day'] as $day){
                 $daily_labels[] = $day['date']['day'].'/'.$day['date']['month'];
                 $daily_values[] = round(($day['rx']+$day['tx'])/1024/1024,2);
             }
@@ -194,8 +194,8 @@ const monthChart = new Chart(document.getElementById('monthChart'), {
         labels: <?php
         $month_labels=[];
         $month_values=[];
-        if(isset($ifaceData['traffic']['months'])){
-            foreach($ifaceData['traffic']['months'] as $month){
+        if(isset($ifaceData['traffic']['month'])){
+            foreach($ifaceData['traffic']['month'] as $month){
                 $month_labels[] = $month['date']['month'];
                 $month_values[] = round(($month['rx']+$month['tx'])/1024/1024/1024,2);
             }
