@@ -33,8 +33,16 @@ UUID=$(cat /proc/sys/kernel/random/uuid)
 bash <(curl -Ls https://raw.githubusercontent.com/XTLS/Xray-install/main/install-release.sh) install
 
 KEYPAIR=$(/usr/local/bin/xray x25519)
-PRIVATE_KEY=$(echo "$KEYPAIR" | grep "PrivateKey" | awk '{print $2}')
-PUBLIC_KEY=$(echo "$KEYPAIR" | grep "Password" | awk '{print $2}')
+
+# 提取 PrivateKey
+PRIVATE_KEY=$(echo "$KEYPAIR" | grep -oP '(?<=PrivateKey: )[^ ]+')
+
+# 提取 PublicKey
+PUBLIC_KEY=$(echo "$KEYPAIR" | grep -oP '(?<=PublicKey\): )[^ ]+')
+
+echo "PRIVATE_KEY=$PRIVATE_KEY"
+echo "PUBLIC_KEY=$PUBLIC_KEY"
+
 
 SHORTIDS=()
 for i in {1..3}; do
