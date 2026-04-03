@@ -724,26 +724,48 @@ finalize_permissions() {
 
 # Display a summary of the installation and access credentials
 print_summary() {
-  printf '\nInstallation complete.\n'
-  printf 'Panel URL: https://%s:%s/%s\n' "${IP}" "${PANEL_SSL_PORT}" "${PANEL_FILE}"
-  printf 'Panel user: %s\n' "${PANEL_USER}"
-  printf 'Panel password: %s\n' "${PANEL_PASSWORD}"
-  printf 'Certificate: self-signed (%s)\n' "${SSL_CERT_FILE}"
-  printf 'QR directory: %s\n' "${SHARE_DIR}"
-  printf 'UUID: %s\n' "${UUID}"
-  printf 'Public key: %s\n' "${PUBLIC_KEY}"
-  printf 'State file: %s\n' "${STATE_FILE}"
-  printf 'Xray config: %s\n' "${XRAY_CONFIG}"
+  cat <<EOF
+
+======================================================================
+                        INSTALLATION COMPLETE
+======================================================================
+
+[ Web Panel ]
+----------------------------------------------------------------------
+URL        : https://${IP}:${PANEL_SSL_PORT}/${PANEL_FILE}
+Username   : ${PANEL_USER}
+Password   : ${PANEL_PASSWORD}
+Cert       : Self-signed (${SSL_CERT_FILE})
+
+[ Xray Core ]
+----------------------------------------------------------------------
+UUID       : ${UUID}
+Public Key : ${PUBLIC_KEY}
+
+[ Client Links (VLESS-Reality) ]
+----------------------------------------------------------------------
+EOF
 
   local index=1
   local link
   for link in "${LINKS[@]}"; do
-    printf 'Client link %d: %s\n' "${index}" "${link}"
+    printf '%d. %s\n' "${index}" "${link}"
     index=$((index + 1))
   done
 
-  printf 'Note: QR images are no longer exposed in the web root.\n'
-  printf 'Note: The panel uses a self-signed certificate, so a browser warning is expected unless you replace it with a trusted certificate.\n'
+  cat <<EOF
+
+[ Local Paths ]
+----------------------------------------------------------------------
+State File : ${STATE_FILE}
+Xray Config: ${XRAY_CONFIG}
+QR Codes   : ${SHARE_DIR}
+
+----------------------------------------------------------------------
+Note: The panel uses a self-signed certificate, so a browser warning 
+      is expected unless you replace it with a trusted certificate.
+======================================================================
+EOF
 }
 
 # Display script usage instructions
