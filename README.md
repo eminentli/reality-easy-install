@@ -1,7 +1,6 @@
 # Xray Reality Auto-Installer
 
 **Author:** Eminent Li
-
 **Date:** 2026-04-03
 
 ## Purpose
@@ -13,8 +12,9 @@ This script automates the installation and configuration of [Xray-core](https://
 - **Automated Xray Installation**: Fetches and installs the latest Xray core using the official release script.
 - **VLESS-Reality Configuration**: Automatically generates UUID, X25519 keypair, and configures a secure Reality inbound.
 - **Traffic Monitoring Dashboard**: Deploys a PHP web dashboard backed by `vnStat` to track daily and monthly traffic.
-- **Apache Integration**: Configures Apache with SSL (self-signed) and Basic Authentication for the dashboard.
+- **Apache Integration**: Configures Apache with SSL (self-signed) on a custom port (8443) to avoid conflict with Xray, and sets up Basic Authentication for the dashboard.
 - **Auto-generated Credentials & Links**: Creates shareable VLESS links and QR codes.
+- **Log Management**: Automatically sets up log rotation for Xray logs to prevent disk space issues.
 
 ## Requirements
 
