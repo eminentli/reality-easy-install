@@ -37,6 +37,10 @@ bash <(curl -Ls https://raw.githubusercontent.com/eminentli/reality-easy-install
 
 Download the `install.sh` script to your server, make it executable, and run it with root privileges.
 
+```bash
+wget https://raw.githubusercontent.com/eminentli/reality-easy-install/main/install.sh -O install.sh
+```
+
 #### 1. Install the Stack
 
 To install or re-apply the full stack, simply run the script. This is the default command.
