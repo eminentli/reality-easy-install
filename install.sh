@@ -193,6 +193,11 @@ configure_apache() {
       -subj "/CN=${IP}" >/dev/null 2>&1
   fi
 
+  # Ensure Apache listens on the custom SSL port
+  if ! grep -E -q "^\s*Listen\s+${PANEL_SSL_PORT}\b" /etc/apache2/ports.conf; then
+    echo "Listen ${PANEL_SSL_PORT}" >> /etc/apache2/ports.conf
+  fi
+
   # Create Apache configuration for the Xray panel authentication
   cat > "${APACHE_CONF}" <<EOF
 <FilesMatch "^panel_[a-f0-9]+\\.php$">
@@ -294,6 +299,11 @@ uninstall_stack() {
   # Clean up panel files in the web root
   if [ -d "${PANEL_DIR}" ]; then
     find "${PANEL_DIR}" -maxdepth 1 \( -name 'panel_*.php' -o -name 'index.html' \) -exec rm -f {} \;
+  fi
+
+  # Remove custom Listen port from Apache ports.conf
+  if [ -f /etc/apache2/ports.conf ] && [ -n "${PANEL_SSL_PORT:-}" ]; then
+    sed -i "/^\s*Listen\s\+${PANEL_SSL_PORT}\b/d" /etc/apache2/ports.conf
   fi
 
   # Remove custom UFW rule
