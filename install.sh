@@ -193,9 +193,14 @@ configure_apache() {
       -subj "/CN=${IP}" >/dev/null 2>&1
   fi
 
-  # Ensure Apache listens on the custom SSL port
+  # Ensure Apache listens on the custom SSL port and disable default 443
   if ! grep -E -q "^\s*Listen\s+${PANEL_SSL_PORT}\b" /etc/apache2/ports.conf; then
     echo "Listen ${PANEL_SSL_PORT}" >> /etc/apache2/ports.conf
+  fi
+  
+  # Remove Listen 443 to avoid conflict with Xray
+  if grep -E -q "^\s*Listen\s+443\b" /etc/apache2/ports.conf; then
+    sed -i "s/^\s*Listen\s\+443\b/# Listen 443/g" /etc/apache2/ports.conf
   fi
 
   # Create Apache configuration for the Xray panel authentication
@@ -235,7 +240,12 @@ EOF
   # Enable new Apache configurations and restart service
   a2enconf xray-panel >/dev/null
   a2ensite xray-panel-ssl >/dev/null
-  apache2ctl configtest >/dev/null
+  
+  if ! apache2ctl configtest >/dev/null 2>&1; then
+    apache2ctl configtest
+    die "Apache configuration is invalid."
+  fi
+  
   systemctl restart apache2
 }
 
@@ -301,9 +311,12 @@ uninstall_stack() {
     find "${PANEL_DIR}" -maxdepth 1 \( -name 'panel_*.php' -o -name 'index.html' \) -exec rm -f {} \;
   fi
 
-  # Remove custom Listen port from Apache ports.conf
-  if [ -f /etc/apache2/ports.conf ] && [ -n "${PANEL_SSL_PORT:-}" ]; then
-    sed -i "/^\s*Listen\s\+${PANEL_SSL_PORT}\b/d" /etc/apache2/ports.conf
+  # Remove custom Listen port from Apache ports.conf and restore 443
+  if [ -f /etc/apache2/ports.conf ]; then
+    if [ -n "${PANEL_SSL_PORT:-}" ]; then
+      sed -i "/^\s*Listen\s\+${PANEL_SSL_PORT}\b/d" /etc/apache2/ports.conf
+    fi
+    sed -i "s/^#\s*Listen\s\+443\b/Listen 443/g" /etc/apache2/ports.conf
   fi
 
   # Remove custom UFW rule
