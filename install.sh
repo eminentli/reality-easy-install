@@ -221,8 +221,8 @@ EOF
     </Directory>
 
     Header always set Strict-Transport-Security "max-age=31536000"
-    ErrorLog \\${APACHE_LOG_DIR}/xray-panel-ssl-error.log
-    CustomLog \\${APACHE_LOG_DIR}/xray-panel-ssl-access.log combined
+    ErrorLog \${APACHE_LOG_DIR}/xray-panel-ssl-error.log
+    CustomLog \${APACHE_LOG_DIR}/xray-panel-ssl-access.log combined
 </VirtualHost>
 </IfModule>
 EOF
