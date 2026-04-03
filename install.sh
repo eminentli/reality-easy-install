@@ -232,11 +232,11 @@ EOF
 </IfModule>
 EOF
 
-  # Enable new Apache configurations and reload service
+  # Enable new Apache configurations and restart service
   a2enconf xray-panel >/dev/null
   a2ensite xray-panel-ssl >/dev/null
   apache2ctl configtest >/dev/null
-  systemctl reload apache2
+  systemctl restart apache2
 }
 
 # Configure firewall rules using UFW
