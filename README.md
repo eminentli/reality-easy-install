@@ -54,6 +54,16 @@ sudo ./install.sh install
 
 Upon successful installation, the script will output the Panel URL, login credentials, server UUID, public key, and client connection links.
 
+### Retrieving Client Links After Installation
+
+If you did not copy the VLESS-Reality links or credentials during the initial installation, you can retrieve them in the following ways:
+
+1.  **QR Code Images (Recommended):**
+    The script automatically generates QR codes for the client links. You can find these `.png` files in the `/root/xray-share` directory. Download these images and scan them with your client app (like v2rayNG or v2rayN).
+
+2.  **Configuration State File:**
+    The core configuration parameters (UUID, Public Key, ShortIDs, etc.) are saved in `/usr/local/etc/xray/reality.env`. You can view this file to manually configure your client.
+
 ### 2. Update Xray Core
 
 To update the installed Xray core to the latest release and restart the service while keeping your configuration intact:
