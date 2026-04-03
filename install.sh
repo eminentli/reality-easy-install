@@ -602,11 +602,15 @@ canvas{margin-top:10px;}
   </div>
   <div class="card" style="margin-top:15px;">
     <h2>Daily Traffic (MB)</h2>
-    <canvas id="dailyChart"></canvas>
+    <div style="position: relative; height: 300px; width: 100%;">
+      <canvas id="dailyChart"></canvas>
+    </div>
   </div>
   <div class="card" style="margin-top:15px;">
     <h2>Monthly Traffic (GB)</h2>
-    <canvas id="monthChart"></canvas>
+    <div style="position: relative; height: 300px; width: 100%;">
+      <canvas id="monthChart"></canvas>
+    </div>
   </div>
 </div>
 <script>
@@ -646,9 +650,6 @@ new Chart(document.getElementById('monthChart'), {
     maintainAspectRatio: false
   }
 });
-
-document.getElementById('dailyChart').style.height = '300px';
-document.getElementById('monthChart').style.height = '300px';
 </script>
 </body>
 </html>
