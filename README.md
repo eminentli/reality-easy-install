@@ -25,7 +25,7 @@ This script automates the installation and configuration of [Xray-core](https://
 
 ## Usage
 
-### Quick Install
+### Quick Install（一键安装）
 
 You can install the complete stack directly using the following command (requires root privileges):
 
@@ -33,7 +33,7 @@ You can install the complete stack directly using the following command (require
 bash <(curl -Ls https://raw.githubusercontent.com/eminentli/reality-easy-install/main/install.sh)
 ```
 
-### Manual Installation
+### Or Manual Installation (手动分步骤安装)
 
 Download the `install.sh` script to your server, make it executable, and run it with root privileges.
 
@@ -62,7 +62,10 @@ If you did not copy the VLESS-Reality links or credentials during the initial in
     The script automatically generates QR codes for the client links. You can find these `.png` files in the `/root/xray-share` directory. Download these images and scan them with your client app (like v2rayNG or v2rayN).
 
 2.  **Configuration State File:**
-    The core configuration parameters (UUID, Public Key, ShortIDs, etc.) are saved in `/usr/local/etc/xray/reality.env`. You can view this file to manually configure your client.
+    The core configuration parameters (UUID, Public Key, ShortIDs, etc.) are saved in `/usr/local/etc/xray/reality.env`. You can view this file to manually configure your client, or construct the share link using this template:
+    ```text
+    vless://[UUID]@[IP]:443?security=reality&encryption=none&pbk=[PUBLIC_KEY]&type=tcp&flow=xtls-rprx-vision&sni=www.cloudflare.com&sid=[SHORTID]#[IP]
+    ```
 
 ### 2. Update Xray Core
 
